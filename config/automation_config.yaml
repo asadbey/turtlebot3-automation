@@ -1,0 +1,55 @@
+# TurtleBot3 Automation Configuration
+
+# Simulation Settings
+simulation:
+  world_name: "turtlebot3_world"
+  robot_model: "waffle"
+  headless: false
+  use_rviz: true
+
+# Navigation Settings
+navigation:
+  map_file: null
+  use_slam: true
+  localization: false
+  update_frequency: 10.0
+  controller_frequency: 20.0
+
+# Object Detection Settings
+detection:
+  model_path: "yolov8n.pt"
+  confidence: 0.5
+  camera_topic: "/camera/image_raw"
+  detection_topic: "/object_detections"
+  annotated_image_topic: "/detection_image"
+  max_detections: 100
+
+# Voice Control Settings
+voice:
+  recognition_engine: "google"
+  tts_engine: "gtts"
+  wake_word: "turtlebot"
+  microphone_index: null
+  language: "en-US"
+
+# Maintenance Settings
+maintenance:
+  health_check_interval: 30.0
+  battery_threshold: 20.0
+  log_level: "INFO"
+  enable_diagnostics: true
+
+# System Settings
+system:
+  use_sim_time: true
+  log_file: "turtlebot_automation.log"
+  node_timeout: 10.0
+  retry_attempts: 3
+
+# Navigation Locations (for voice commands)
+locations:
+  kitchen: [3.0, 2.0, 0.0]
+  living_room: [1.0, 1.0, 1.57]
+  bedroom: [2.0, 3.0, -1.57]
+  entrance: [0.0, 0.0, 0.0]
+  home: [0.0, 0.0, 0.0]

@@ -1,0 +1,49 @@
+# Python dependencies for TurtleBot3 Automation
+
+# Core ROS2 dependencies
+rclpy>=3.3.0
+geometry-msgs
+sensor-msgs
+nav-msgs
+vision-msgs
+diagnostic-msgs
+nav2-msgs
+tf2-msgs
+tf2-ros
+cv-bridge
+
+# Computer Vision and AI
+opencv-python>=4.5.0
+ultralytics>=8.0.0
+torch>=1.9.0
+torchvision>=0.10.0
+numpy>=1.21.0
+
+# Voice Control
+SpeechRecognition>=3.8.0
+gTTS>=2.2.0
+playsound>=1.2.0
+pyaudio>=0.2.11
+
+# System monitoring
+psutil>=5.8.0
+
+# Configuration and utilities
+PyYAML>=6.0
+scipy>=1.7.0
+Pillow>=8.3.0
+
+# Gazebo and simulation
+ros-gz-image
+ros-gz-bridge
+
+# Development and testing
+pytest>=6.2.0
+pytest-cov>=2.12.0
+black>=21.0.0
+flake8>=3.9.0
+
+# Optional: For enhanced features
+# matplotlib>=3.4.0  # For plotting and visualization
+# scikit-learn>=1.0.0  # For ML algorithms
+# pandas>=1.3.0  # For data analysis

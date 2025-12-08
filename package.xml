@@ -1,0 +1,42 @@
+# ROS2 package.xml for TurtleBot3 Automation
+
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>turtlebot_automation</name>
+  <version>1.0.0</version>
+  <description>Comprehensive automation system for TurtleBot3 with navigation, object detection, and voice control</description>
+  
+  <maintainer email="developer@example.com">TurtleBot3 Automation Team</maintainer>
+  <license>MIT</license>
+  
+  <url type="website">https://github.com/yourusername/turtlebot-automation</url>
+  <url type="bugtracker">https://github.com/yourusername/turtlebot-automation/issues</url>
+  <url type="repository">https://github.com/yourusername/turtlebot-automation</url>
+  
+  <author email="developer@example.com">TurtleBot3 Automation Team</author>
+  
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>ros_gz_image</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
