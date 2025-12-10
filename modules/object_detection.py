@@ -102,8 +102,10 @@ class ObjectDetection(Node if 'Node' in globals() else object):
             if 'Node' in globals():
                 self._setup_ros_connections()
                 self.bridge = CvBridge()
+                self.logger.info("ROS2 object detection connections established")
             else:
-                self.logger.warning("ROS2 not available, running in simulation mode")
+                self.logger.info("ROS2 not available, running object detection in simulation mode")
+                self._start_simulation_mode()
                 
             return True
         except Exception as e:
@@ -158,9 +160,59 @@ class ObjectDetection(Node if 'Node' in globals() else object):
             )
             
             self.logger.info("ROS2 detection connections established")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to setup ROS detection connections: {e}")
+
+    def _start_simulation_mode(self) -> None:
+        """Start object detection simulation mode"""
+        self.logger.info("Object detection simulation mode initialized")
+        self.logger.info("Mock object detections will be generated periodically")
+
+        # Start background simulation thread
+        import threading
+        sim_thread = threading.Thread(target=self._run_detection_simulation, daemon=True)
+        sim_thread.start()
+
+    def _run_detection_simulation(self) -> None:
+        """Run mock object detection simulation"""
+        import random
+
+        mock_objects = [
+            "person", "chair", "table", "cup", "book", "laptop", "bottle", "phone"
+        ]
+
+        while self.detection_active:
+            if random.random() < 0.3:  # 30% chance every few seconds
+                # Generate random detection
+                num_objects = random.randint(1, 3)
+                detections = []
+
+                for _ in range(num_objects):
+                    obj_class = random.choice(mock_objects)
+                    confidence = random.uniform(0.6, 0.95)
+                    bbox = [
+                        random.uniform(50, 400),   # x1
+                        random.uniform(50, 300),   # y1
+                        random.uniform(150, 550),  # x2
+                        random.uniform(150, 400)   # y2
+                    ]
+
+                    detection = {
+                        'class': obj_class,
+                        'confidence': confidence,
+                        'bbox': bbox
+                    }
+                    detections.append(detection)
+
+                # Log detections
+                self.logger.info(f"🔍 Detected {len(detections)} object(s):")
+                for i, det in enumerate(detections, 1):
+                    self.logger.info(f"  {i}. {det['class']} ({det['confidence']:.2f} confidence)")
+
+                self.detection_count += len(detections)
+
+            time.sleep(random.uniform(3, 8))  # Random interval between detections
             
     def start_detection(self) -> None:
         """Start object detection"""

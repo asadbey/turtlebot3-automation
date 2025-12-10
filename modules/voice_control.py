@@ -119,8 +119,10 @@ class VoiceControl(Node if 'Node' in globals() else object):
             # Setup ROS connections if available
             if 'Node' in globals():
                 self._setup_ros_connections()
+                self.logger.info("ROS2 voice control connections established")
             else:
-                self.logger.warning("ROS2 not available, running in simulation mode")
+                self.logger.info("ROS2 not available, running voice control in simulation mode")
+                self._start_simulation_mode()
                 
             return True
         except Exception as e:
@@ -155,9 +157,59 @@ class VoiceControl(Node if 'Node' in globals() else object):
             self.voice_command_pub = self.create_publisher(String, '/voice_commands', 10)
             
             self.logger.info("ROS2 voice control connections established")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to setup ROS voice connections: {e}")
+
+    def _start_simulation_mode(self) -> None:
+        """Start voice control simulation mode"""
+        self.logger.info("Voice control simulation mode initialized")
+        self.logger.info("Mock voice commands will be simulated periodically")
+
+        # Start background simulation thread
+        import threading
+        sim_thread = threading.Thread(target=self._run_voice_simulation, daemon=True)
+        sim_thread.start()
+
+    def _run_voice_simulation(self) -> None:
+        """Run mock voice command simulation"""
+        import random
+
+        mock_commands = [
+            "turtlebot move forward",
+            "turtlebot turn left",
+            "turtlebot stop",
+            "turtlebot navigate to kitchen",
+            "turtlebot what do you see",
+            "turtlebot explore"
+        ]
+
+        while self.voice_active:
+            if random.random() < 0.2:  # 20% chance every few seconds
+                # Simulate hearing wake word
+                self.logger.info("🎤 Wake word detected: 'turtlebot'")
+
+                # Simulate random command
+                command = random.choice(mock_commands)
+                self.logger.info(f"🎙️  Recognized command: '{command}'")
+
+                # Simulate processing
+                time.sleep(0.5)
+                self._process_voice_command(command)
+
+                # Simulate response
+                responses = [
+                    "Moving forward",
+                    "Turning left",
+                    "Stopping robot",
+                    "Navigating to kitchen",
+                    "Scanning for objects",
+                    "Starting exploration"
+                ]
+                response = random.choice(responses)
+                self.logger.info(f"🗣️  Response: '{response}'")
+
+            time.sleep(random.uniform(5, 15))  # Random interval between commands
             
     def start_voice_control(self) -> None:
         """Start voice control system"""

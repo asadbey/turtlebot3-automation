@@ -74,12 +74,14 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
         """Initialize maintenance module"""
         try:
             self.logger.info("Initializing maintenance automation module")
-            
+
             if 'Node' in globals():
                 self._setup_ros_connections()
+                self.logger.info("ROS2 connections established for maintenance monitoring")
             else:
-                self.logger.warning("ROS2 not available, running in simulation mode")
-                
+                self.logger.info("ROS2 not available, running in simulation mode with mock data")
+                self._start_simulation_mode()
+
             return True
         except Exception as e:
             self.logger.error(f"Failed to initialize maintenance module: {e}")
@@ -95,7 +97,7 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
                 self._battery_callback,
                 10
             )
-            
+
             # IMU subscriber
             self.imu_sub = self.create_subscription(
                 Imu,
@@ -103,7 +105,7 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
                 self._imu_callback,
                 10
             )
-            
+
             # LIDAR subscriber
             self.lidar_sub = self.create_subscription(
                 LaserScan,
@@ -111,7 +113,7 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
                 self._lidar_callback,
                 10
             )
-            
+
             # Odometry subscriber
             self.odom_sub = self.create_subscription(
                 Odometry,
@@ -119,18 +121,45 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
                 self._odom_callback,
                 10
             )
-            
+
             # Diagnostics publisher
             self.diagnostic_pub = self.create_publisher(
                 DiagnosticArray,
                 '/diagnostics',
                 10
             )
-            
+
             self.logger.info("ROS2 connections established")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to setup ROS connections: {e}")
+
+    def _start_simulation_mode(self) -> None:
+        """Start simulation mode with mock data generation"""
+        self.logger.info("Starting maintenance simulation mode")
+        # Initialize mock data
+        self._last_battery_time = time.time()
+        self._last_lidar_time = time.time()
+        self._last_imu_time = time.time()
+        self._last_odom_time = time.time()
+
+        # Set initial mock health status
+        self.system_health['battery']['voltage'] = 11.8
+        self.system_health['battery']['percentage'] = 85.0
+        self.system_health['battery']['status'] = 'ok'
+
+        self.system_health['sensors']['lidar'] = 'ok'
+        self.system_health['sensors']['imu'] = 'ok'
+        self.system_health['sensors']['camera'] = 'ok'
+
+        self.system_health['motors']['status'] = 'ok'
+        self.system_health['motors']['left_wheel'] = 0.0
+        self.system_health['motors']['right_wheel'] = 0.0
+
+        self.system_health['navigation']['status'] = 'ok'
+        self.system_health['navigation']['localization'] = 'ok'
+
+        self.logger.info("Maintenance simulation mode initialized with mock sensor data")
             
     def start_monitoring(self) -> None:
         """Start health monitoring loop"""
@@ -160,20 +189,64 @@ class MaintenanceAutomation(Node if 'Node' in globals() else object):
                 self._check_system_health()
                 self._check_sensor_health()
                 self._check_navigation_health()
-                
+
                 # Publish diagnostics
                 if 'Node' in globals():
                     self._publish_diagnostics()
-                    
+
                 # Log status
                 self._log_health_status()
-                
+
                 # Sleep until next check
                 time.sleep(self.health_check_interval)
-                
+
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
                 time.sleep(5.0)  # Brief pause before retry
+
+    def _generate_mock_sensor_data(self) -> None:
+        """Generate mock sensor data for simulation mode"""
+        import random
+
+        # Simulate battery drain over time
+        current_time = time.time()
+        if hasattr(self, '_start_time'):
+            elapsed = current_time - self._start_time
+            # Battery drains slowly over time
+            battery_level = max(20.0, 100.0 - (elapsed / 3600.0) * 10.0)  # 10% per hour
+            self.system_health['battery']['percentage'] = battery_level
+            self.system_health['battery']['voltage'] = 11.8 * (battery_level / 100.0)
+
+            if battery_level < self.battery_threshold:
+                self.system_health['battery']['status'] = 'low'
+            else:
+                self.system_health['battery']['status'] = 'ok'
+        else:
+            self._start_time = current_time
+
+        # Simulate occasional sensor variations
+        if random.random() < 0.1:  # 10% chance
+            # Randomly vary sensor status
+            sensors = ['lidar', 'imu', 'camera']
+            sensor = random.choice(sensors)
+            if random.random() < 0.8:  # 80% chance of being ok
+                self.system_health['sensors'][sensor] = 'ok'
+            else:
+                self.system_health['sensors'][sensor] = 'warning'
+
+        # Simulate motor activity
+        if random.random() < 0.3:  # 30% chance of movement
+            self.system_health['motors']['left_wheel'] = random.uniform(-0.5, 0.5)
+            self.system_health['motors']['right_wheel'] = random.uniform(-0.5, 0.5)
+        else:
+            self.system_health['motors']['left_wheel'] = 0.0
+            self.system_health['motors']['right_wheel'] = 0.0
+
+        # Update timestamps
+        self._last_battery_time = current_time
+        self._last_lidar_time = current_time
+        self._last_imu_time = current_time
+        self._last_odom_time = current_time
                 
     def _check_system_health(self) -> None:
         """Check system-level health metrics"""

@@ -54,7 +54,7 @@ pip install -r requirements.txt
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/turtlebot-automation.git
+git clone https://github.com/asadbey/turtlebot-automation.git
 cd turtlebot-automation
 
 # Install Python dependencies

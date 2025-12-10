@@ -36,9 +36,9 @@ class SetupAutomation:
         """Detect installed ROS2 distribution"""
         try:
             result = subprocess.run(
-                ["rosversion", "-d"], 
-                capture_output=True, 
-                text=True, 
+                ["rosversion", "-d"],
+                capture_output=True,
+                text=True,
                 timeout=10
             )
             if result.returncode == 0:
@@ -47,10 +47,36 @@ class SetupAutomation:
                 return distro
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
-            
+
         # Default to humble for Ubuntu 22.04
         self.logger.warning("Could not detect ROS2 distro, defaulting to humble")
         return "humble"
+
+    def _is_ros2_available(self) -> bool:
+        """Check if ROS2 is available on the system"""
+        try:
+            result = subprocess.run(
+                ["which", "ros2"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return False
+
+    def _create_basic_directories(self) -> None:
+        """Create basic directory structure for simulation mode"""
+        try:
+            # Create logs directory
+            Path("logs").mkdir(exist_ok=True)
+            self.logger.info("Created logs directory for simulation mode")
+
+            # Note: ROS workspace creation is skipped in simulation mode
+            self.logger.info("ROS workspace creation skipped (ROS2 not available)")
+
+        except Exception as e:
+            self.logger.warning(f"Could not create basic directories: {e}")
         
     def initialize(self) -> bool:
         """Initialize setup module"""
@@ -79,34 +105,44 @@ class SetupAutomation:
         """Run complete setup process"""
         try:
             self.logger.info("Starting TurtleBot3 setup automation...")
-            
+
+            # Check if ROS2 is available
+            if not self._is_ros2_available():
+                self.logger.info("ROS2 not available - running in simulation mode")
+                self.logger.info("Skipping package installation and ROS-specific setup")
+                self.logger.info("System will use available Python modules for demonstration")
+
+                # Still try to create basic directory structure
+                self._create_basic_directories()
+                return True
+
             # Step 1: Update system packages
             if not self._update_system():
                 return False
-                
+
             # Step 2: Install ROS2 packages
             if not self._install_ros2_packages():
                 return False
-                
+
             # Step 3: Install TurtleBot3 packages
             if not self._install_turtlebot3_packages():
                 return False
-                
+
             # Step 4: Create ROS workspace
             if not self._create_workspace():
                 return False
-                
+
             # Step 5: Setup environment
             if not self._setup_environment():
                 return False
-                
+
             # Step 6: Verify setup
             if not self._verify_setup():
                 return False
-                
+
             self.logger.info("TurtleBot3 setup completed successfully!")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Setup failed: {e}")
             return False

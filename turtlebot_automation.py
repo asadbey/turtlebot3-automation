@@ -34,28 +34,186 @@ except ImportError as e:
     print(f"⚠️  Some modules not available: {e}")
     # Create dummy classes for missing modules
     class MaintenanceAutomation:
-        def __init__(self, *args): pass
-        def initialize(self): return False
-        def start_monitoring(self): pass
-        def shutdown(self): pass
+        def __init__(self, config):
+            self.logger = logging.getLogger(__name__)
+            self.is_monitoring = False
+
+        def initialize(self):
+            self.logger.info("Maintenance simulation mode initialized with mock data")
+            return True
+
+        def start_monitoring(self):
+            if not self.is_monitoring:
+                self.is_monitoring = True
+                self.logger.info("🩺 Starting health monitoring simulation...")
+                # Start background simulation
+                import threading
+                sim_thread = threading.Thread(target=self._run_simulation, daemon=True)
+                sim_thread.start()
+
+        def _run_simulation(self):
+            import time
+            import random
+            import psutil
+
+            while self.is_monitoring:
+                try:
+                    # Mock battery data
+                    battery_level = max(15.0, 85.0 - (time.time() % 3600) / 40.0)
+                    voltage = 11.8 * (battery_level / 100.0)
+
+                    # Mock system data
+                    try:
+                        import psutil
+                        cpu_usage = psutil.cpu_percent(interval=0.1)
+                        memory_usage = psutil.virtual_memory().percent
+                    except ImportError:
+                        cpu_usage = random.uniform(10, 30)
+                        memory_usage = random.uniform(40, 60)
+
+                    # Mock sensor data
+                    sensors_ok = random.random() > 0.1  # 90% chance sensors are ok
+
+                    self.logger.info(
+                        f"📊 Health Status - Battery: {battery_level:.1f}% ({voltage:.1f}V), "
+                        f"CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}%, "
+                        f"Sensors: {'OK' if sensors_ok else 'WARNING'}"
+                    )
+
+                    time.sleep(5)  # Update every 5 seconds
+
+                except Exception as e:
+                    self.logger.error(f"Simulation error: {e}")
+                    time.sleep(1)
+
+        def shutdown(self):
+            self.is_monitoring = False
+            self.logger.info("Maintenance simulation stopped")
 
     class NavigationAutomation:
-        def __init__(self, *args): pass
-        def initialize(self): return False
-        def start_navigation(self): pass
-        def shutdown(self): pass
+        def __init__(self, config, sim_mode):
+            self.logger = logging.getLogger(__name__)
+            self.is_navigating = False
+
+        def initialize(self):
+            self.logger.info("Navigation simulation mode initialized")
+            return True
+
+        def start_navigation(self):
+            if not self.is_navigating:
+                self.is_navigating = True
+                self.logger.info("🧭 Navigation system simulation started")
+                # Start background simulation
+                import threading
+                sim_thread = threading.Thread(target=self._run_simulation, daemon=True)
+                sim_thread.start()
+
+        def _run_simulation(self):
+            import time
+            import random
+
+            while self.is_navigating:
+                if random.random() < 0.3:  # 30% chance to simulate navigation
+                    # Simulate navigation to random location
+                    x, y = random.uniform(1, 5), random.uniform(1, 5)
+                    self.logger.info(f"🚀 Starting navigation to ({x:.1f}, {y:.1f})")
+
+                    # Simulate progress
+                    for progress in [25, 50, 75, 100]:
+                        time.sleep(1)
+                        self.logger.info(f"📍 Navigation progress: {progress}% - Position: ({x*progress/100:.1f}, {y*progress/100:.1f})")
+
+                    self.logger.info(f"✅ Navigation completed! Reached target ({x:.1f}, {y:.1f})")
+
+                time.sleep(random.uniform(3, 8))
+
+        def shutdown(self):
+            self.is_navigating = False
+            self.logger.info("Navigation simulation stopped")
 
     class ObjectDetection:
-        def __init__(self, *args): pass
-        def initialize(self): return False
-        def start_detection(self): pass
-        def shutdown(self): pass
+        def __init__(self, config):
+            self.logger = logging.getLogger(__name__)
+            self.is_detecting = False
+
+        def initialize(self):
+            self.logger.info("Object detection simulation mode initialized")
+            return True
+
+        def start_detection(self):
+            if not self.is_detecting:
+                self.is_detecting = True
+                self.logger.info("🔍 Object detection simulation started")
+                # Start background simulation
+                import threading
+                sim_thread = threading.Thread(target=self._run_simulation, daemon=True)
+                sim_thread.start()
+
+        def _run_simulation(self):
+            import time
+            import random
+
+            objects = ["person", "chair", "table", "cup", "book", "laptop", "bottle", "phone", "dog", "cat"]
+
+            while self.is_detecting:
+                if random.random() < 0.4:  # 40% chance to detect objects
+                    num_objects = random.randint(1, 3)
+                    self.logger.info(f"🔍 Detected {num_objects} object(s):")
+
+                    for i in range(num_objects):
+                        obj = random.choice(objects)
+                        confidence = random.uniform(0.7, 0.95)
+                        self.logger.info(f"  {i+1}. {obj} ({confidence:.2f} confidence)")
+
+                time.sleep(random.uniform(4, 10))
+
+        def shutdown(self):
+            self.is_detecting = False
+            self.logger.info("Object detection simulation stopped")
 
     class VoiceControl:
-        def __init__(self, *args): pass
-        def initialize(self): return False
-        def start_voice_control(self): pass
-        def shutdown(self): pass
+        def __init__(self, config):
+            self.logger = logging.getLogger(__name__)
+            self.is_listening = False
+
+        def initialize(self):
+            self.logger.info("Voice control simulation mode initialized")
+            return True
+
+        def start_voice_control(self):
+            if not self.is_listening:
+                self.is_listening = True
+                self.logger.info("🎤 Voice control simulation started - listening for commands")
+                # Start background simulation
+                import threading
+                sim_thread = threading.Thread(target=self._run_simulation, daemon=True)
+                sim_thread.start()
+
+        def _run_simulation(self):
+            import time
+            import random
+
+            commands = [
+                ("move forward", "Moving forward"),
+                ("turn left", "Turning left"),
+                ("stop", "Stopping robot"),
+                ("navigate to kitchen", "Navigating to kitchen"),
+                ("what do you see", "Scanning environment"),
+                ("explore", "Starting exploration mode")
+            ]
+
+            while self.is_listening:
+                if random.random() < 0.25:  # 25% chance to simulate voice command
+                    command, response = random.choice(commands)
+                    self.logger.info(f"🎙️  Heard: '{command}'")
+                    time.sleep(0.5)
+                    self.logger.info(f"🗣️  Response: '{response}'")
+
+                time.sleep(random.uniform(6, 15))
+
+        def shutdown(self):
+            self.is_listening = False
+            self.logger.info("Voice control simulation stopped")
 
     MODULES_AVAILABLE = False
 
@@ -233,9 +391,18 @@ class TurtleBotAutomation:
             
     def run_individual_module(self, module_name: str) -> None:
         """Run specific automation module"""
-        if not self.initialize_ros():
+        # For setup module, allow running even without ROS2
+        if module_name != 'setup':
+            if not self.initialize_ros():
+                return
+        else:
+            # Initialize ROS context check but don't fail if not available
+            self.initialize_ros()
+
+        # Initialize modules
+        if not self.initialize_modules():
             return
-            
+
         if module_name not in self.modules:
             self.logger.error(f"Unknown module: {module_name}")
             return
@@ -246,6 +413,8 @@ class TurtleBotAutomation:
             
             if hasattr(module, 'run'):
                 module.run()
+            elif hasattr(module, 'run_setup'):
+                module.run_setup()
             elif hasattr(module, 'start_monitoring'):
                 module.start_monitoring()
             elif hasattr(module, 'start_navigation'):

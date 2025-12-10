@@ -87,12 +87,14 @@ class NavigationAutomation(Node if 'Node' in globals() else object):
         """Initialize navigation module"""
         try:
             self.logger.info("Initializing navigation automation module")
-            
+
             if 'Node' in globals():
                 self._setup_ros_connections()
+                self.logger.info("ROS2 navigation connections established")
             else:
-                self.logger.warning("ROS2 not available, running in simulation mode")
-                
+                self.logger.info("ROS2 not available, running navigation in simulation mode")
+                self._start_simulation_mode()
+
             return True
         except Exception as e:
             self.logger.error(f"Failed to initialize navigation module: {e}")
@@ -134,9 +136,20 @@ class NavigationAutomation(Node if 'Node' in globals() else object):
             )
             
             self.logger.info("ROS2 navigation connections established")
-            
+
         except Exception as e:
             self.logger.error(f"Failed to setup ROS navigation connections: {e}")
+
+    def _start_simulation_mode(self) -> None:
+        """Start navigation simulation mode"""
+        self.logger.info("Navigation simulation mode initialized")
+        self.logger.info("Mock navigation goals and pose tracking available")
+
+        # Initialize mock pose
+        self.current_pose = {
+            'position': {'x': 0.0, 'y': 0.0, 'z': 0.0},
+            'orientation': {'x': 0.0, 'y': 0.0, 'z': 0.0, 'w': 1.0}
+        }
             
     def start_navigation(self) -> None:
         """Start navigation system"""
@@ -223,18 +236,68 @@ class NavigationAutomation(Node if 'Node' in globals() else object):
             
     def _simulate_navigation(self, x: float, y: float, yaw: float) -> bool:
         """Simulate navigation for testing without ROS2"""
-        self.logger.info(f"Simulating navigation to: x={x}, y={y}, yaw={yaw}")
-        
-        # Simulate navigation time
+        import threading
+
+        self.logger.info(f"🚀 Starting navigation to pose: x={x:.2f}, y={y:.2f}, yaw={yaw:.2f} radians")
+
+        # Calculate navigation parameters
         distance = math.sqrt(x**2 + y**2)
-        nav_time = distance * 2.0  # 2 seconds per meter
-        
+        nav_time = max(2.0, distance * 1.5)  # 1.5 seconds per meter, minimum 2 seconds
+
+        self.logger.info(f"📏 Distance to target: {distance:.2f} meters")
+        self.logger.info(f"⏱️  Estimated navigation time: {nav_time:.1f} seconds")
+
         self.is_navigating = True
-        time.sleep(nav_time)
-        self.is_navigating = False
-        
-        self.logger.info("Simulated navigation completed")
+        self.goal_pose = (x, y, yaw)
+
+        # Start simulation in background thread
+        nav_thread = threading.Thread(target=self._run_navigation_simulation, args=(x, y, yaw, nav_time))
+        nav_thread.daemon = True
+        nav_thread.start()
+
+        self.logger.info("🎯 Navigation goal accepted - robot is moving...")
         return True
+
+    def _run_navigation_simulation(self, target_x: float, target_y: float, target_yaw: float, duration: float) -> None:
+        """Run detailed navigation simulation"""
+        import random
+
+        start_time = time.time()
+        steps = int(duration / 0.5)  # Update every 0.5 seconds
+
+        for step in range(steps):
+            elapsed = time.time() - start_time
+            progress = elapsed / duration
+
+            if progress >= 1.0:
+                break
+
+            # Calculate current position (linear interpolation)
+            current_x = target_x * progress
+            current_y = target_y * progress
+            current_yaw = target_yaw * progress
+
+            # Add some realistic variation
+            noise_x = random.uniform(-0.05, 0.05)
+            noise_y = random.uniform(-0.05, 0.05)
+            current_x += noise_x
+            current_y += noise_y
+
+            # Update mock pose
+            if hasattr(self, 'current_pose') and self.current_pose:
+                self.current_pose['position']['x'] = current_x
+                self.current_pose['position']['y'] = current_y
+
+            # Log progress
+            if step % 4 == 0:  # Log every 2 seconds
+                self.logger.info(f"📍 Navigation progress: {progress*100:.1f}% - Position: ({current_x:.2f}, {current_y:.2f})")
+
+            time.sleep(0.5)
+
+        # Navigation complete
+        self.logger.info(f"✅ Navigation completed! Final position: ({target_x:.2f}, {target_y:.2f})")
+        self.logger.info(f"🎯 Goal reached with {target_yaw:.2f} radian orientation")
+        self.is_navigating = False
         
     def _navigate_to_pose_response(self, future) -> None:
         """Handle navigation response"""
