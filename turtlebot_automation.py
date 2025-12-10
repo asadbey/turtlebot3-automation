@@ -5,7 +5,6 @@ Integrates setup, maintenance, navigation, object detection, and voice control
 for both simulation and hardware deployment
 """
 
-import rclpy
 import argparse
 import logging
 import sys
@@ -13,12 +12,52 @@ import signal
 from pathlib import Path
 from typing import Dict, Optional
 
+# ROS2 imports (optional)
+try:
+    import rclpy
+    ROS2_AVAILABLE = True
+except ImportError:
+    ROS2_AVAILABLE = False
+    print("⚠️  ROS2 not available - running in simulation mode only")
+
 # Import automation modules
 from modules.setup_automation import SetupAutomation
-from modules.maintenance_automation import MaintenanceAutomation  
-from modules.navigation_automation import NavigationAutomation
-from modules.object_detection import ObjectDetection
-from modules.voice_control import VoiceControl
+
+# Import other modules conditionally
+try:
+    from modules.maintenance_automation import MaintenanceAutomation
+    from modules.navigation_automation import NavigationAutomation
+    from modules.object_detection import ObjectDetection
+    from modules.voice_control import VoiceControl
+    MODULES_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  Some modules not available: {e}")
+    # Create dummy classes for missing modules
+    class MaintenanceAutomation:
+        def __init__(self, *args): pass
+        def initialize(self): return False
+        def start_monitoring(self): pass
+        def shutdown(self): pass
+
+    class NavigationAutomation:
+        def __init__(self, *args): pass
+        def initialize(self): return False
+        def start_navigation(self): pass
+        def shutdown(self): pass
+
+    class ObjectDetection:
+        def __init__(self, *args): pass
+        def initialize(self): return False
+        def start_detection(self): pass
+        def shutdown(self): pass
+
+    class VoiceControl:
+        def __init__(self, *args): pass
+        def initialize(self): return False
+        def start_voice_control(self): pass
+        def shutdown(self): pass
+
+    MODULES_AVAILABLE = False
 
 
 class TurtleBotAutomation:
@@ -95,12 +134,16 @@ class TurtleBotAutomation:
         
     def initialize_ros(self) -> bool:
         """Initialize ROS2 context and nodes"""
+        if not ROS2_AVAILABLE:
+            self.logger.warning("ROS2 not available - running in simulation mode")
+            return False
+
         try:
             if not rclpy.ok():
                 rclpy.init()
                 self.ros_context = rclpy.Context()
                 rclpy.init(context=self.ros_context)
-                
+
             self.logger.info("ROS2 initialized successfully")
             return True
         except Exception as e:
@@ -111,62 +154,76 @@ class TurtleBotAutomation:
         """Initialize all automation modules"""
         try:
             self.logger.info("Initializing automation modules...")
-            
+
             # Initialize modules based on configuration
             self.modules['setup'] = SetupAutomation(self.config, self.simulation_mode)
             self.modules['maintenance'] = MaintenanceAutomation(self.config)
             self.modules['navigation'] = NavigationAutomation(self.config, self.simulation_mode)
             self.modules['detection'] = ObjectDetection(self.config)
             self.modules['voice'] = VoiceControl(self.config)
-            
+
             # Initialize each module
             for name, module in self.modules.items():
                 if hasattr(module, 'initialize'):
                     success = module.initialize()
                     if not success:
-                        self.logger.error(f"Failed to initialize {name} module")
-                        return False
-                    self.logger.info(f"{name.capitalize()} module initialized")
-                    
-            self.logger.info("All modules initialized successfully")
+                        self.logger.warning(f"Failed to initialize {name} module - continuing in simulation mode")
+                        # Don't return False, continue with other modules
+                    else:
+                        self.logger.info(f"{name.capitalize()} module initialized")
+
+            self.logger.info("Module initialization completed")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Failed to initialize modules: {e}")
             return False
             
     def run_full_automation(self) -> None:
         """Execute complete automation pipeline"""
-        if not self.initialize_ros():
-            return
-            
+        ros_available = self.initialize_ros()
+
         if not self.initialize_modules():
             return
-            
+
         try:
             self.logger.info("Starting full automation pipeline...")
-            
+
             # Run setup if needed
-            if self.modules['setup'].needs_setup():
+            if hasattr(self.modules['setup'], 'needs_setup') and self.modules['setup'].needs_setup():
                 self.logger.info("Running setup automation...")
-                self.modules['setup'].run_setup()
-                
+                if hasattr(self.modules['setup'], 'run_setup'):
+                    self.modules['setup'].run_setup()
+
             # Start maintenance monitoring
-            self.modules['maintenance'].start_monitoring()
-            
+            if hasattr(self.modules['maintenance'], 'start_monitoring'):
+                self.modules['maintenance'].start_monitoring()
+
             # Start navigation system
-            self.modules['navigation'].start_navigation()
-            
+            if hasattr(self.modules['navigation'], 'start_navigation'):
+                self.modules['navigation'].start_navigation()
+
             # Start object detection
-            self.modules['detection'].start_detection()
-            
+            if hasattr(self.modules['detection'], 'start_detection'):
+                self.modules['detection'].start_detection()
+
             # Start voice control
-            self.modules['voice'].start_voice_control()
-            
+            if hasattr(self.modules['voice'], 'start_voice_control'):
+                self.modules['voice'].start_voice_control()
+
             # Keep the system running
             self.logger.info("Full automation system is running...")
-            self._run_main_loop()
-            
+            if ros_available:
+                self._run_main_loop()
+            else:
+                self.logger.info("Running in simulation mode - press Ctrl+C to exit")
+                import time
+                try:
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    pass
+
         except KeyboardInterrupt:
             self.logger.info("Received keyboard interrupt")
         except Exception as e:
@@ -228,7 +285,7 @@ class TurtleBotAutomation:
     def shutdown(self) -> None:
         """Graceful shutdown of all systems"""
         self.logger.info("Shutting down TurtleBot3 automation...")
-        
+
         # Shutdown all modules
         for name, module in self.modules.items():
             try:
@@ -237,11 +294,11 @@ class TurtleBotAutomation:
                     self.logger.info(f"{name.capitalize()} module shutdown")
             except Exception as e:
                 self.logger.error(f"Error shutting down {name}: {e}")
-                
+
         # Shutdown ROS2
-        if rclpy.ok():
+        if ROS2_AVAILABLE and rclpy.ok():
             rclpy.shutdown()
-            
+
         self.logger.info("TurtleBot3 automation shutdown complete")
 
 
